@@ -17,11 +17,11 @@ class GeminiChunker(BaseChunker):
         self.model = genai.GenerativeModel(self.model_name)
         
         # Load prompts from YAML configuration
-        with open("src/config/prompts.yaml", "r", encoding="utf-8") as f:
-            prompts = yaml.safe_load(f)
+        with open("src/config/ingestion_prompts.yaml", "r", encoding="utf-8") as f:
+            ingestion_prompts = yaml.safe_load(f)
             
-        base_prompt = prompts.get("gemini_base", "")
-        focus_prompt = prompts.get(f"{strategy}_focus", "")
+        base_prompt = ingestion_prompts.get("gemini_base", "")
+        focus_prompt = ingestion_prompts.get(f"{strategy}_focus", "")
         
         # Modular prompt construction
         self.system_prompt = f"{base_prompt}\n\n{focus_prompt}"

@@ -8,6 +8,7 @@ from src.config.settings import settings
 from src.rag.retrievers.basic_retriever import BasicRetriever
 from src.rag.langfuse_client import lf_manager
 from src.tools.parent_fetcher import fetch_document_context
+from src.tools.reference_fetcher import fetch_reference_context  # YENI TOOL EKLENDI
 
 logger = logging.getLogger(__name__)
 genai.configure(api_key=settings.gemini_api_key)
@@ -24,10 +25,13 @@ class KapadokyaAgent:
         self.router_model_name = router_config.get("model_name", "gemini-1.5-flash")
         self.agent_model_name = agent_config.get("model_name", "gemini-2.5-pro")
 
-        # Initialize tools
-        def tool_wrapper(source_filename: str) -> str:
+        # TOOL WRAPPERS: To integrate the tools with Gemini, we define wrapper functions that call our actual tool implementations.
+        def parent_tool_wrapper(source_filename: str) -> str:
             return fetch_document_context(self.collection_name, source_filename)
             
+        def reference_tool_wrapper(reference_name: str) -> str:
+            return fetch_reference_context(self.collection_name, reference_name)
+
         # 1. ROUTER MODEL (Fast, cheap, JSON output)
         self.router_model = genai.GenerativeModel(
             model_name=self.router_model_name,
@@ -42,7 +46,7 @@ class KapadokyaAgent:
         self.agent_model = genai.GenerativeModel(
             model_name=self.agent_model_name,
             system_instruction=agent_config["system_prompt"],
-            tools=[tool_wrapper],
+            tools=[parent_tool_wrapper, reference_tool_wrapper], # İKİ TOOL DA EKLENDİ
             generation_config=genai.GenerationConfig(
                 temperature=agent_config.get("temperature", 0.1)
             )
@@ -52,7 +56,6 @@ class KapadokyaAgent:
         """Converts Gradio's history format to Gemini's native Content objects."""
         gemini_history = []
         for msg in gradio_history:
-            # Gradio role matches Gemini role (user/model)
             role = "user" if msg["role"] == "user" else "model"
             gemini_history.append(
                 content_types.ContentDict(role=role, parts=[msg["content"]])
@@ -64,7 +67,6 @@ class KapadokyaAgent:
         """Determines if the query is general chat or requires RAG."""
         chat = self.router_model.start_chat(history=formatted_history)
         
-        # Prompting the router specifically for JSON structure
         prompt = (
             f"Analyze this user query: '{user_query}'. "
             "Respond ONLY in JSON with two keys: 'intent' (strictly either 'chat' or 'rag'), "
