@@ -1,0 +1,34 @@
+# --- Environment Variables ---
+.env
+
+# --- Python & Virtual Environments ---
+__pycache__/
+*.py[cod]
+*$py.class
+.venv/
+venv/
+env/
+.pytest_cache/
+
+# --- IDEs & OS Files ---
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+
+# --- Logs & Docs ---
+*.log
+logs/
+
+# --- Data & Vector Stores ---
+# Ignore everything inside data/ directories
+data/raw_docs/*/*
+data/processed_chunks/*/*
+data/vector_stores/*/*
+data/evaluation_data/*
+
+# EXCEPT: Do not ignore directories themselves, and keep .gitkeep files
+!data/**/.gitkeep
+
+# --- Evaluator Outputs (Optional: ignore if they get too big) ---
+# !research/benchmarks/results/*.csv

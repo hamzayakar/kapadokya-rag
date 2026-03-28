@@ -1,0 +1,18 @@
+.git
+.gitignore
+.env
+__pycache__/
+*.py[cod]
+*$py.class
+.venv/
+venv/
+env/
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+research/
+# Test/Data dosyalarını image'ı şişirmemesi için ignore ediyoruz.
+# Bunları runtime'da volume olarak mount edeceğiz.
+data/
+README.md

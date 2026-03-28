@@ -1,0 +1,21 @@
+# --- LLM & API Integrations ---
+google-generativeai==0.8.3
+
+# --- Vector Database ---
+qdrant-client==1.12.0
+
+# --- User Interface ---
+gradio==5.4.0
+
+# --- Configuration & Validation ---
+pydantic==2.9.2
+pydantic-settings==2.6.0
+python-dotenv==1.0.1
+
+# --- Baseline Chunking & Parsing (For Benchmarks) ---
+langchain-text-splitters==0.3.2
+unstructured[pdf]==0.16.2
+pdf2image==1.17.0
+
+# --- Observability & Evaluation ---
+langfuse==2.53.0
