@@ -23,3 +23,19 @@ This project goes beyond standard semantic search by implementing a robust, cros
 - **Vector DB:** Qdrant
 - **UI:** Gradio
 - **Observability:** Langfuse
+
+## Ingestion Pipeline Usage (CLI)
+
+You can process raw PDFs into structured JSON chunks using the built-in CLI tool. The tool allows you to easily switch between different parsing and chunking methods for benchmarking.
+
+**Example: Run Gemini with Mega-Chunking Strategy**
+```bash
+python -m src.ingestion.cli --method gemini --strategy mega --input_dir data/raw_docs/kapadokya
+```
+
+**Example: Run the Naive Langchain Baseline**
+```bash
+python -m src.ingestion.cli --method langchain --strategy naive
+```
+
+Processed JSON chunks will be automatically saved under data/processed_chunks/.
