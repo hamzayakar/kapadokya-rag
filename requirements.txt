@@ -13,13 +13,6 @@ pydantic==2.9.2
 pydantic-settings==2.6.0
 python-dotenv==1.0.1
 
-# --- Baseline Chunking & Parsing (For Benchmarks) ---
-langchain-text-splitters==0.3.2
-langchain-community==0.3.4
-langchain-experimental==0.3.3
-unstructured[pdf]==0.16.2
-pdf2image==1.17.0
-
 # --- Observability & Evaluation ---
 langfuse==2.53.0
 

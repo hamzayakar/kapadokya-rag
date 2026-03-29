@@ -4,14 +4,6 @@ FROM python:3.11-slim
 # Set the working directory
 WORKDIR /app
 
-# Install system dependencies required for unstructured and PDF parsing
-RUN apt-get update && apt-get install -y \
-    libgl1 \
-    poppler-utils \
-    tesseract-ocr \
-    tesseract-ocr-tur \
-    && rm -rf /var/lib/apt/lists/*
-
 # Copy requirements and install them
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt

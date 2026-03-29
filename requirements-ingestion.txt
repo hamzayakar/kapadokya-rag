@@ -1,0 +1,9 @@
+# Inherit base requirements
+-r requirements.txt
+
+# --- Baseline Chunking & Parsing (For Local Ingestion) ---
+langchain-text-splitters==0.3.2
+langchain-community==0.3.4
+langchain-experimental==0.3.3
+unstructured[pdf]==0.16.2
+pdf2image==1.17.0
