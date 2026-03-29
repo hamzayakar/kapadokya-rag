@@ -6,9 +6,10 @@ WORKDIR /app
 
 # Install system dependencies required for unstructured and PDF parsing
 RUN apt-get update && apt-get install -y \
-    libgl1-mesa-glx \
+    libgl1 \
     poppler-utils \
     tesseract-ocr \
+    tesseract-ocr-tur \
     && rm -rf /var/lib/apt/lists/*
 
 # Copy requirements and install them
