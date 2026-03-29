@@ -1,3 +1,13 @@
+---
+title: Kapadokya RAG Benchmark
+emoji: 🏛️
+colorFrom: blue
+colorTo: indigo
+sdk: docker
+pinned: false
+short_description: Agentic RAG System for Kapadokya University
+---
+
 # Agentic RAG Pipeline for Institutional Documents
 
 An advanced, research-oriented Retrieval-Augmented Generation (RAG) system built for Kapadokya University's official regulations, directives, and external legal references. 
