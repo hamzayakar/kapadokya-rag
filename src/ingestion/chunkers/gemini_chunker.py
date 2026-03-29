@@ -16,21 +16,16 @@ class GeminiChunker(BaseChunker):
         self.model_name = "gemini-2.5-pro"
         self.model = genai.GenerativeModel(self.model_name)
         
-        # Load prompts from YAML configuration
         with open("src/config/ingestion_prompts.yaml", "r", encoding="utf-8") as f:
             ingestion_prompts = yaml.safe_load(f)
             
-        base_prompt = ingestion_prompts.get("gemini_base", "")
-        focus_prompt = ingestion_prompts.get(f"{strategy}_focus", "")
-        
-        # Modular prompt construction
+        base_prompt = ingestion_prompts["gemini_base"]
+        focus_prompt = ingestion_prompts[f"{strategy}_focus"]
         self.system_prompt = f"{base_prompt}\n\n{focus_prompt}"
 
     @observe(as_type="generation")
     def chunk_document(self, file_path: str) -> List[Dict[str, Any]]:
-        # Ensure the observation name reflects the strategy being used
         langfuse_context.update_current_observation(name=f"gemini_{self.strategy}_chunking")
-        
         uploaded_file = genai.upload_file(path=file_path, mime_type="application/pdf")
         
         try:
@@ -58,6 +53,7 @@ class GeminiChunker(BaseChunker):
                 meta = base_meta.copy()
                 meta["strategy"] = f"gemini_{self.strategy}"
                 meta["chunk_index"] = i
+                meta["references"] = chunk.get("references", [])
                 
                 if self.strategy == "mega":
                     meta["section_title"] = chunk.get("section_title", "")
@@ -73,7 +69,6 @@ class GeminiChunker(BaseChunker):
             return formatted_chunks
             
         except Exception as e:
-            print(f"Gemini API or JSON parsing error: {e}")
-            return []
+            raise RuntimeError(f"Gemini API or JSON parsing error failed: {e}")
         finally:
             uploaded_file.delete()

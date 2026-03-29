@@ -16,21 +16,22 @@ class LangfuseManager:
     def get_prompt_and_config(self, prompt_name: str) -> dict:
         """
         FAIL-FAST: Fetches prompt and its JSON configs from Langfuse.
-        If it fails, it raises an exception and stops the application.
+        Raises exception if config keys are missing.
         """
         try:
             prompt_obj = self.client.get_prompt(prompt_name)
+            config = prompt_obj.config
             
-            # Extract config, provide sensible fail-safe defaults for config ONLY, not the prompt
-            config = prompt_obj.config if prompt_obj.config else {}
-            
+            if not config or "model" not in config or "temperature" not in config:
+                raise KeyError("Missing required keys ('model', 'temperature') in Langfuse prompt config.")
+                
             return {
                 "system_prompt": prompt_obj.compile(),
-                "model_name": config.get("model", "gemini-1.5-flash"), # Default to cheap model just in case
-                "temperature": config.get("temperature", 0.0)
+                "model_name": config["model"],
+                "temperature": config["temperature"]
             }
         except Exception as e:
-            logger.critical(f"FATAL: Could not fetch prompt '{prompt_name}' from Langfuse. System halting. Error: {e}")
-            sys.exit(1) # Fail-fast: Stop execution immediately
+            logger.critical(f"FATAL: Could not fetch prompt '{prompt_name}' from Langfuse. Error: {e}")
+            sys.exit(1)
 
 lf_manager = LangfuseManager()
