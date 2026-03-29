@@ -6,6 +6,7 @@ qdrant-client==1.12.0
 
 # --- User Interface ---
 gradio==5.4.0
+huggingface-hub==0.25.2
 
 # --- Configuration & Validation ---
 pydantic==2.9.2
