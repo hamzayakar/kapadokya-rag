@@ -1,5 +1,5 @@
 ---
-title: Kapadokya RAG Benchmark
+title: Kapadokya RAG
 emoji: 🏛️
 colorFrom: blue
 colorTo: indigo
