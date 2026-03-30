@@ -1,8 +1,8 @@
 import gradio as gr
+import hashlib
 from src.rag.agent import KapadokyaAgent
 
 # We do NOT initialize agents globally to prevent startup crashes if Qdrant collections are missing.
-# Instead, we store their configurations in a dictionary.
 agent_configs = {
     "Gemini Mega-Chunking": {"collection": "kapadokya_gemini_mega", "strategy": "mega"},
     "Gemini Parent-Child": {"collection": "kapadokya_gemini_parent_child", "strategy": "parent_child"},
@@ -15,29 +15,35 @@ agent_configs = {
 loaded_agents = {}
 
 def create_chat_fn(strategy_name, config):
-    # ADDED: gr.Request to automatically capture the browser's unique session hash
     def chat_interface(user_message, history, request: gr.Request):
         try:
-            # Extract unique session ID for Langfuse tracking
-            session_id = request.session_hash if request else "unknown_session"
+            # 1. Base session hash from browser
+            browser_session = request.session_hash if request else "local"
+            
+            # 2. Identify the FIRST message of the current active chat cycle
+            # If history is empty (new chat or cleared), the current message is the first.
+            first_msg = history[0]["content"] if len(history) > 0 else user_message
+            
+            # 3. Create a unique Session ID: Browser + Tab Name + First Message
+            raw_id = f"{browser_session}_{strategy_name}_{first_msg}"
+            # Hash it to keep it clean and short for Langfuse
+            session_id = f"{strategy_name}_{hashlib.md5(raw_id.encode()).hexdigest()[:8]}"
 
-            # LAZY INITIALIZATION: Initialize the agent only when the user asks the first question.
-            # This prevents Hugging Face deployment timeouts and gracefully handles missing collections.
+            # LAZY INITIALIZATION
             if strategy_name not in loaded_agents:
-                print(f"[{strategy_name}] Triggered for the first time. Connecting to Qdrant and Langfuse...")
+                print(f"[{strategy_name}] Triggered for the first time. Connecting to Qdrant...")
                 loaded_agents[strategy_name] = KapadokyaAgent(
                     collection_name=config["collection"], 
                     strategy=config["strategy"]
                 )
             
-            # The agent is ready in memory, route the query with session_id.
+            # Route query with the bulletproof session_id
             return loaded_agents[strategy_name].ask(
                 user_query=user_message, 
                 gradio_history=history,
                 session_id=session_id
             )
         except Exception as e:
-            # Graceful degradation: Show the error in the chat UI instead of crashing the whole app.
             return f"System error occurred. Please check logs: {str(e)}"
     return chat_interface
 
@@ -46,7 +52,7 @@ with gr.Blocks(theme="soft", title="Kapadokya RAG Benchmark") as demo:
     gr.Markdown(
         "Compare different document chunking strategies side-by-side. "
         "Each tab is connected to a different Qdrant collection and maintains its own chat history. "
-        "Use the trash can icon to clear the chat."
+        "Use the trash can icon to clear the chat and start a new Langfuse session."
     )
 
     for strategy_name, config in agent_configs.items():
