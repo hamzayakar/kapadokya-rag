@@ -1,9 +1,11 @@
 from typing import List, Dict, Any
 from qdrant_client import QdrantClient
-from langchain_google_genai import GoogleGenerativeAIEmbeddings
+import google.generativeai as genai
 from langfuse.decorators import observe
 
 from src.config.settings import settings
+
+genai.configure(api_key=settings.gemini_api_key)
 
 class BasicRetriever:
     def __init__(self, collection_name: str):
@@ -12,23 +14,25 @@ class BasicRetriever:
             api_key=settings.qdrant_api_key
         )
         self.collection_name = collection_name
-        
-        # task_type="retrieval_query" for optimized searching.
-        self.embeddings = GoogleGenerativeAIEmbeddings(
-            model="text-embedding-004",
-            task_type="retrieval_query",
-            google_api_key=settings.gemini_api_key
-        )
+        self.embedding_model = "models/text-embedding-004"
 
     @observe(as_type="span", name="qdrant_semantic_search")
     def retrieve(self, query: str, top_k: int = 5) -> List[Dict[str, Any]]:
-        """Embeds the user query and retrieves the top_k most similar chunks."""
-        query_vector = self.embeddings.embed_query(query)
+        """Embeds the user query natively and retrieves the top_k most similar chunks."""
+        
+        # NATIVE SDK USAGE
+        embedding_response = genai.embed_content(
+            model=self.embedding_model,
+            content=query,
+            task_type="retrieval_query"
+        )
+        query_vector = embedding_response['embedding']
         
         search_result = self.client.search(
             collection_name=self.collection_name,
             query_vector=query_vector,
-            limit=top_k
+            limit=top_k,
+            score_threshold=0.45
         )
         
         # Format the output for the agent

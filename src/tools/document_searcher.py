@@ -1,7 +1,9 @@
 from qdrant_client import QdrantClient
 from qdrant_client.models import Filter, FieldCondition, MatchValue
-from langchain_google_genai import GoogleGenerativeAIEmbeddings
+import google.generativeai as genai
 from src.config.settings import settings
+
+genai.configure(api_key=settings.gemini_api_key)
 
 def search_within_document(collection_name: str, query: str, source_filename: str) -> str:
     """
@@ -10,20 +12,23 @@ def search_within_document(collection_name: str, query: str, source_filename: st
     Call this if a chunk is cut off or lacks context, to find the rest of the information in the same PDF.
     """
     client = QdrantClient(url=settings.qdrant_url, api_key=settings.qdrant_api_key)
-    embeddings = GoogleGenerativeAIEmbeddings(
-        model="models/text-embedding-004", 
-        google_api_key=settings.gemini_api_key
-    )
     
     try:
-        query_vector = embeddings.embed_query(query)
+        embedding_response = genai.embed_content(
+            model="models/text-embedding-004",
+            content=query,
+            task_type="retrieval_query"
+        )
+        query_vector = embedding_response['embedding']
+        
         search_result = client.search(
             collection_name=collection_name,
             query_vector=query_vector,
             query_filter=Filter(
                 must=[FieldCondition(key="source", match=MatchValue(value=source_filename))]
             ),
-            limit=3
+            limit=3,
+            score_threshold=0.45
         )
         
         if not search_result:

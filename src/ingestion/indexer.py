@@ -2,26 +2,23 @@ import uuid
 from typing import List, Dict, Any
 from qdrant_client import QdrantClient
 from qdrant_client.models import PointStruct, VectorParams, Distance, Filter, FieldCondition, MatchValue
-from langchain_google_genai import GoogleGenerativeAIEmbeddings
+import google.generativeai as genai
 from langfuse.decorators import observe
 
 from src.config.settings import settings
 
+# Configure Native Google SDK
+genai.configure(api_key=settings.gemini_api_key)
+
 class Indexer:
     def __init__(self, collection_name: str):
-        """Initializes Qdrant Client and Gemini Embeddings."""
+        """Initializes Qdrant Client and Gemini Embeddings natively."""
         self.client = QdrantClient(
             url=settings.qdrant_url,
             api_key=settings.qdrant_api_key
         )
         self.collection_name = collection_name
-        
-        # task_type="retrieval_document" for optimized indexing.
-        self.embeddings = GoogleGenerativeAIEmbeddings(
-            model="text-embedding-004",
-            task_type="retrieval_document",
-            google_api_key=settings.gemini_api_key
-        )
+        self.embedding_model = "models/text-embedding-004"
         self._ensure_collection()
 
     def _ensure_collection(self):
@@ -61,15 +58,22 @@ class Indexer:
 
     @observe(as_type="generation", name="embedding_and_indexing")
     def index_chunks(self, chunks: List[Dict[str, Any]]):
-        """Embeds text chunks and upserts them into Qdrant."""
+        """Embeds text chunks using Native SDK and upserts them into Qdrant."""
         if not chunks:
             print("[-] No chunks provided for indexing.")
             return
 
         texts = [chunk["text"] for chunk in chunks]
         
-        print(f"[*] Generating embeddings for {len(texts)} chunks...")
-        vectors = self.embeddings.embed_documents(texts)
+        print(f"[*] Generating embeddings for {len(texts)} chunks using Native SDK...")
+        
+        # NATIVE SDK USAGE (Bypasses Langchain v1beta endpoint issues)
+        embedding_response = genai.embed_content(
+            model=self.embedding_model,
+            content=texts,
+            task_type="retrieval_document"
+        )
+        vectors = embedding_response['embedding']
         
         points = []
         for chunk, vector in zip(chunks, vectors):

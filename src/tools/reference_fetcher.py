@@ -1,6 +1,8 @@
 from qdrant_client import QdrantClient
-from langchain_google_genai import GoogleGenerativeAIEmbeddings
+import google.generativeai as genai
 from src.config.settings import settings
+
+genai.configure(api_key=settings.gemini_api_key)
 
 def fetch_reference_context(collection_name: str, reference_name: str) -> str:
     """
@@ -8,18 +10,20 @@ def fetch_reference_context(collection_name: str, reference_name: str) -> str:
     Use this tool when the current context cites another law, directive, or article.
     """
     client = QdrantClient(url=settings.qdrant_url, api_key=settings.qdrant_api_key)
-    embeddings = GoogleGenerativeAIEmbeddings(
-        model="models/text-embedding-004", 
-        google_api_key=settings.gemini_api_key
-    )
     
     try:
-        query_vector = embeddings.embed_query(reference_name)
+        embedding_response = genai.embed_content(
+            model="models/text-embedding-004",
+            content=reference_name,
+            task_type="retrieval_query"
+        )
+        query_vector = embedding_response['embedding']
+        
         search_result = client.search(
             collection_name=collection_name,
             query_vector=query_vector,
             limit=3,
-            score_threshold=0.50
+            score_threshold=0.45
         )
         
         if not search_result:
