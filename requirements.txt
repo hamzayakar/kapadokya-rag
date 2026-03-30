@@ -15,7 +15,4 @@ python-dotenv==1.0.1
 
 # --- Observability & Evaluation ---
 langfuse==2.53.0
-
 PyYAML==6.0.1
-
-langchain-google-genai==2.0.1
