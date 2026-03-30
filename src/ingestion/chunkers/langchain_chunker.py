@@ -22,7 +22,7 @@ class LangchainChunker(BaseChunker):
         # 2. Semantic Strategy (Semantic chunking)
         elif self.strategy == "semantic":
             embeddings = GoogleGenerativeAIEmbeddings(
-                model="models/text-embedding-004", 
+                model="models/gemini-embedding-001", 
                 google_api_key=settings.gemini_api_key
             )
             self.splitter = SemanticChunker(embeddings)

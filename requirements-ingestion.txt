@@ -2,11 +2,12 @@
 -r requirements.txt
 
 # --- Baseline Chunking & Parsing (For Local Ingestion) ---
-langchain-text-splitters==0.3.2
-langchain-community==0.3.4
+langchain-text-splitters==1.1.1
+langchain-community==0.4.1
 langchain-experimental==0.3.3
-unstructured[pdf]==0.16.2
+unstructured[pdf]==0.22.6
+pypdf==5.1.0
 pdf2image==1.17.0
 
 # --- Moved from main requirements (Only needed for Semantic Chunker baseline) ---
-langchain-google-genai==2.0.1
+langchain-google-genai==4.2.1
