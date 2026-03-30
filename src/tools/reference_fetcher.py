@@ -13,7 +13,7 @@ def fetch_reference_context(collection_name: str, reference_name: str) -> str:
     
     try:
         embedding_response = genai.embed_content(
-            model="models/text-embedding-004",
+            model="models/gemini-embedding-001",
             content=reference_name,
             task_type="retrieval_query"
         )

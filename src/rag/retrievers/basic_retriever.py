@@ -14,7 +14,7 @@ class BasicRetriever:
             api_key=settings.qdrant_api_key
         )
         self.collection_name = collection_name
-        self.embedding_model = "models/text-embedding-004"
+        self.embedding_model = "models/gemini-embedding-001"
 
     @observe(as_type="span", name="qdrant_semantic_search")
     def retrieve(self, query: str, top_k: int = 5) -> List[Dict[str, Any]]:

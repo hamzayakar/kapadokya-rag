@@ -4,64 +4,82 @@ emoji: 🏛️
 colorFrom: blue
 colorTo: indigo
 sdk: docker
+app_port: 7860
 pinned: false
-short_description: Agentic RAG System for Kapadokya University
+short_description: Agentic RAG System & Chunking Benchmark for Kapadokya University
 ---
 
-# Agentic RAG Pipeline for Institutional Documents
+# Agentic RAG Pipeline & Chunking Strategy Benchmark
 
-An advanced, research-oriented Retrieval-Augmented Generation (RAG) system built for Kapadokya University's official regulations, directives, and external legal references. 
+An advanced, research-oriented Retrieval-Augmented Generation (RAG) system built to analyze, retrieve, and evaluate official regulations, directives, and external legal references for Kapadokya University.
 
-## Project Overview
-This project goes beyond standard semantic search by implementing a robust, cross-modal ingestion pipeline and an agentic retrieval architecture. It is designed to handle complex inter-document references and legal hierarchies found in 69+ official university documents.
+## 🎯 Project Overview & Thesis Objective
 
-## Key Features
-- **Multimodal Ingestion Pipeline:** Utilizing Gemini's native PDF understanding (`mime_type=pdf`) for superior document parsing compared to traditional OCR/text splitters.
-- **Advanced Chunking Strategies:** Comparing Mega-Chunking vs. Tool-based Parent-Child Chunking.
-- **Agentic Retrieval & Tools:** - `parent_fetcher`: Dynamically fetches the entirety of a specific document if the initial retrieved chunks lack context.
-  - `reference_fetcher`: Automatically traverses cross-references (e.g., fetching External Law 2547 when cited by an internal directive) via custom tool calling.
-- **Router-Agent Architecture:** A fail-fast, dual-model setup where a smaller model (Gemini 1.5 Flash) routes queries (Chat vs. RAG) and a larger model (Gemini 2.5 Pro) executes the RAG and tool calls.
-- **Cloud-Native & Production Ready:** Stateless Gradio UI deployed alongside a Qdrant Cloud vector database, complete with collision control during data ingestion.
-- **Observability:** Full LLM trace, token-based cost estimation, and dynamic prompt management via Langfuse.
+This project serves as both a functional **Agentic RAG application** and an **academic testing arena**. It is designed to solve the "context fragmentation" problem in legal documents by comparing traditional, naive chunking methods against advanced, LLM-driven (Native Gemini) chunking strategies. 
 
-## Directory Structure
-- `data/`: Local storage for raw PDFs, processed chunks, and evaluation datasets (ignored by version control).
-- `src/`: Core application logic (ingestion, RAG agents, tools).
-- `research/`: Benchmarking scripts, Jupyter notebooks, and evaluation reports for academic output.
-- `app.py`: The main Gradio web interface.
+By eliminating opaque orchestrators (like LangChain's Agent abstraction) in the core runtime, this project utilizes **Native Google Generative AI SDK** to achieve deterministic tool calling, zero-overhead routing, and exact observability.
 
-## Stack
-- **LLM:** Google Gemini Series (1.5 Flash & 2.5 Pro)
-- **Embedding:** `text-embedding-004`
-- **Vector DB:** Qdrant Cloud
-- **UI:** Gradio 5
-- **Observability:** Langfuse
+## 🧠 Architecture & Key Features
 
-## Ingestion Pipeline Usage (CLI)
+### 1. Multi-Strategy Ingestion & Benchmarking
+The system evaluates 5 distinct chunking strategies side-by-side using isolated Qdrant vector collections:
+- **Gemini Mega-Chunking:** LLM-driven chunking that preserves entire sequential rules and logical execution orders.
+- **Gemini Parent-Child:** Hierarchical chunking that links overarching summaries to exact sub-clauses.
+- **Baseline Naive:** Langchain's `RecursiveCharacterTextSplitter`.
+- **Baseline Semantic:** Langchain's `SemanticChunker`.
+- **Baseline Unstructured:** Layout-aware parsing using `unstructured[pdf]`.
 
-You can process raw PDFs into structured JSON chunks and push them to Qdrant using the built-in enterprise CLI tool.
+### 2. Native Agentic Retrieval & Tool Calling
+Instead of relying on single-shot retrieval, the agent dynamically decides when to fetch more context:
+- `document_searcher`: Performs semantic search strictly within a targeted source document if a chunk feels cut off.
+- `hierarchy_fetcher`: Retrieves the entire family of sub-clauses for a specific parent article.
+- `reference_fetcher`: Automatically traverses cross-references (e.g., fetching "Law No. 2547" when cited by a university directive).
+
+### 3. Smart Routing (Fail-Fast Mechanism)
+A dual-model architecture optimizes latency and cost:
+- **Router (Gemini Flash):** Intercepts queries to classify intent. Casual chit-chat bypasses the vector database entirely, returning immediate responses.
+- **RAG Agent (Gemini Pro):** Handles complex, academic queries using the Qdrant database and dynamic tool execution.
+
+### 4. Advanced Observability & Session Tracking (Langfuse)
+- **Zero-Downtime Prompt Management:** System prompts and model configurations are injected dynamically via Langfuse, requiring no redeployments.
+- **Intelligent Session Management:** Unique Session IDs are generated by hashing the `Browser Context + UI Tab + First Message`, ensuring that evaluations and traces are cleanly separated by chunking strategy and user intent.
+- **Graceful Degradation:** Lazy initialization prevents deployment crashes if vector collections are absent, routing errors directly to the UI.
+
+## 📂 Directory Structure
+
+- `data/`: Local volume for raw PDFs and processed JSON chunks.
+- `src/config/`: Dynamic settings and baseline prompt definitions.
+- `src/ingestion/`: The CLI engine for PDF extraction, chunking, and Qdrant upsertion.
+- `src/rag/`: Core LLM logic, Native SDK agent, and Qdrant retriever.
+- `src/tools/`: Deterministic functions exposed to the Gemini Agent.
+- `app.py`: Stateless Gradio UI serving 5 independent benchmarking tabs.
+
+## 🚀 Ingestion Pipeline Usage (Local CLI)
+
+The enterprise-grade CLI tool handles extraction and indexing with built-in collision control.
 
 **1. Extract (PDF to JSON)**
-Extracts text using the chosen engine and strategy. Includes collision control to prevent overwriting existing JSONs.
+Extract text using a specific chunking engine.
 ```bash
 python -m src.ingestion.cli --action extract --method gemini --strategy mega --folder kapadokya
 ```
 
 **2. Push (JSON to Qdrant)**
-Embeds the extracted chunks and upserts them to Qdrant. Automatically skips documents that are already indexed unless `--force` is used.
+Embeds the extracted chunks and upserts them to the respective Qdrant collection.
 ```bash
 python -m src.ingestion.cli --action push --method gemini --strategy mega --folder kapadokya
 ```
 
-**3. Delete (Remove from Qdrant)**
-Safely deletes all vectors associated with a specific document from the specified collection.
+**3. Delete Collection Data**
+Safely purge vectors associated with a specific source.
 ```bash
 python -m src.ingestion.cli --action delete --method gemini --strategy mega --folder kapadokya --file yonetmelik.pdf
 ```
+*(Add `--force` to extraction or push commands to bypass collision control and overwrite existing data).*
 
-## Running the Web UI
+## 🌐 Running the Web UI
 
-To start the chat interface locally:
+To start the Gradio interface and interact with the Benchmark Arena locally:
 ```bash
 python app.py
 ```

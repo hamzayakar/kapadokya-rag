@@ -15,7 +15,7 @@ def search_within_document(collection_name: str, query: str, source_filename: st
     
     try:
         embedding_response = genai.embed_content(
-            model="models/text-embedding-004",
+            model="models/gemini-embedding-001",
             content=query,
             task_type="retrieval_query"
         )

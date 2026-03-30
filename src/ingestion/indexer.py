@@ -18,7 +18,7 @@ class Indexer:
             api_key=settings.qdrant_api_key
         )
         self.collection_name = collection_name
-        self.embedding_model = "models/text-embedding-004"
+        self.embedding_model = "models/gemini-embedding-001"
         self._ensure_collection()
 
     def _ensure_collection(self):
