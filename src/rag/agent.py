@@ -93,16 +93,22 @@ class KapadokyaAgent:
         return json.loads(response.text)
 
     @observe(as_type="generation", name="agent_execution")
-    def ask(self, user_query: str, gradio_history: list = None) -> str:
-        # EXPLICITLY SET INPUT AND TAGS FOR LANGFUSE UI
-        langfuse_context.update_current_observation(input=user_query)
+    def ask(self, user_query: str, gradio_history: list = None, session_id: str = None) -> str:
+        
+        # 1. FIX: EXPLICITLY SET TRACE INPUT, SESSION ID, AND TAGS FOR LANGFUSE UI
         langfuse_context.update_current_trace(
+            session_id=session_id,
+            input=user_query,
             tags=[self.strategy],
             metadata={"collection": self.collection_name}
         )
+        langfuse_context.update_current_observation(input=user_query)
 
         if gradio_history is None:
             gradio_history = []
+            
+        # 2. FIX: LIMIT CHAT HISTORY TO LAST 15 MESSAGES (Protect context window & API costs)
+        gradio_history = gradio_history[-15:]
             
         formatted_history = self._format_history_for_gemini(gradio_history)
         
@@ -111,7 +117,8 @@ class KapadokyaAgent:
         # Fail-fast strictly checking "intent"
         if route_decision["intent"] == "chat":
             logger.info("Router: Handled as casual chat.")
-            # EXPLICITLY SET OUTPUT FOR CHAT INTENT
+            # EXPLICITLY SET TRACE & OBSERVATION OUTPUT FOR CHAT INTENT
+            langfuse_context.update_current_trace(output=route_decision["response"])
             langfuse_context.update_current_observation(output=route_decision["response"])
             return route_decision["response"]
             
@@ -139,6 +146,7 @@ class KapadokyaAgent:
                 model=self.agent_model_name
             )
             
-        # EXPLICITLY SET OUTPUT FOR RAG INTENT
+        # EXPLICITLY SET TRACE & OBSERVATION OUTPUT FOR RAG INTENT
+        langfuse_context.update_current_trace(output=response.text)
         langfuse_context.update_current_observation(output=response.text)
         return response.text

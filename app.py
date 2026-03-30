@@ -15,8 +15,12 @@ agent_configs = {
 loaded_agents = {}
 
 def create_chat_fn(strategy_name, config):
-    def chat_interface(user_message, history):
+    # ADDED: gr.Request to automatically capture the browser's unique session hash
+    def chat_interface(user_message, history, request: gr.Request):
         try:
+            # Extract unique session ID for Langfuse tracking
+            session_id = request.session_hash if request else "unknown_session"
+
             # LAZY INITIALIZATION: Initialize the agent only when the user asks the first question.
             # This prevents Hugging Face deployment timeouts and gracefully handles missing collections.
             if strategy_name not in loaded_agents:
@@ -26,8 +30,12 @@ def create_chat_fn(strategy_name, config):
                     strategy=config["strategy"]
                 )
             
-            # The agent is ready in memory, route the query.
-            return loaded_agents[strategy_name].ask(user_query=user_message, gradio_history=history)
+            # The agent is ready in memory, route the query with session_id.
+            return loaded_agents[strategy_name].ask(
+                user_query=user_message, 
+                gradio_history=history,
+                session_id=session_id
+            )
         except Exception as e:
             # Graceful degradation: Show the error in the chat UI instead of crashing the whole app.
             return f"System error occurred. Please check logs: {str(e)}"
