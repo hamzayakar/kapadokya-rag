@@ -6,7 +6,7 @@ colorTo: indigo
 sdk: docker
 app_port: 7860
 pinned: false
-short_description: Agentic RAG System & Chunking Benchmark for Kapadokya University
+short_description: Agentic RAG System & Chunking Benchmark for Kapadokya Uni
 ---
 
 # Agentic RAG Pipeline & Chunking Strategy Benchmark
