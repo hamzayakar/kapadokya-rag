@@ -94,6 +94,13 @@ class KapadokyaAgent:
 
     @observe(as_type="generation", name="agent_execution")
     def ask(self, user_query: str, gradio_history: list = None) -> str:
+        # EXPLICITLY SET INPUT AND TAGS FOR LANGFUSE UI
+        langfuse_context.update_current_observation(input=user_query)
+        langfuse_context.update_current_trace(
+            tags=[self.strategy],
+            metadata={"collection": self.collection_name}
+        )
+
         if gradio_history is None:
             gradio_history = []
             
@@ -104,6 +111,8 @@ class KapadokyaAgent:
         # Fail-fast strictly checking "intent"
         if route_decision["intent"] == "chat":
             logger.info("Router: Handled as casual chat.")
+            # EXPLICITLY SET OUTPUT FOR CHAT INTENT
+            langfuse_context.update_current_observation(output=route_decision["response"])
             return route_decision["response"]
             
         logger.info("Router: Proceeding with Vector Retrieval...")
@@ -130,4 +139,6 @@ class KapadokyaAgent:
                 model=self.agent_model_name
             )
             
+        # EXPLICITLY SET OUTPUT FOR RAG INTENT
+        langfuse_context.update_current_observation(output=response.text)
         return response.text

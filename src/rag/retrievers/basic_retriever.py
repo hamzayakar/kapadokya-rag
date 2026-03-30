@@ -12,8 +12,11 @@ class BasicRetriever:
             api_key=settings.qdrant_api_key
         )
         self.collection_name = collection_name
+        
+        # task_type="retrieval_query" for optimized searching.
         self.embeddings = GoogleGenerativeAIEmbeddings(
-            model="models/text-embedding-004",
+            model="text-embedding-004",
+            task_type="retrieval_query",
             google_api_key=settings.gemini_api_key
         )
 

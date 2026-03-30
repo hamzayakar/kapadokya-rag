@@ -16,8 +16,10 @@ class Indexer:
         )
         self.collection_name = collection_name
         
+        # task_type="retrieval_document" for optimized indexing.
         self.embeddings = GoogleGenerativeAIEmbeddings(
-            model="models/text-embedding-004",
+            model="text-embedding-004",
+            task_type="retrieval_document",
             google_api_key=settings.gemini_api_key
         )
         self._ensure_collection()
