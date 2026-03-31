@@ -1,5 +1,5 @@
 from qdrant_client import QdrantClient
-from qdrant_client.models import Filter, FieldCondition, MatchText
+from qdrant_client.models import Filter, FieldCondition, MatchValue 
 import google.generativeai as genai
 from src.config.settings import settings
 
@@ -35,7 +35,7 @@ def fetch_reference_context(collection_name: str, target_filename: str, query: s
                 must=[
                     FieldCondition(
                         key="source", 
-                        match=MatchText(text=target_filename) # Filter strictly by target filename
+                        match=MatchValue(value=target_filename) # Filter strictly by target filename
                     )
                 ]
             ),

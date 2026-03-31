@@ -8,7 +8,7 @@ agent_configs = {
     "Gemini Parent-Child": {"collection": "kapadokya_gemini_parent_child", "strategy": "parent_child"},
     "Baseline: Langchain Naive": {"collection": "kapadokya_baseline_naive", "strategy": "naive"},
     "Baseline: Langchain Semantic": {"collection": "kapadokya_baseline_semantic", "strategy": "semantic"},
-    "Baseline: Unstructured": {"collection": "kapadokya_baseline_unstructured", "strategy": "unstructured"}
+    "Baseline: Unstructured": {"collection": "kapadokya_baseline_unstructured", "strategy": "layout"}
 }
 
 # A cache dictionary to hold the initialized agents in memory.
