@@ -8,6 +8,7 @@ from src.ingestion.chunkers.gemini_chunker import GeminiChunker
 from src.ingestion.chunkers.langchain_chunker import LangchainChunker
 from src.ingestion.chunkers.unstructured_chunker import UnstructuredChunker
 from src.ingestion.indexer import Indexer
+from src.ingestion.linker import CitationLinker # NEW: The Intermediate Linker Agent
 
 logging.basicConfig(level=logging.INFO, format="%(levelname)s: %(message)s")
 logger = logging.getLogger(__name__)
@@ -31,10 +32,11 @@ def save_chunks(chunks: list, output_dir: str, filename: str):
 
 def main():
     parser = argparse.ArgumentParser(description="Kapadokya RAG Enterprise Ingestion CLI")
-    parser.add_argument("--action", type=str, required=True, choices=["extract", "push", "delete"],
-                        help="'extract' (PDF to JSON), 'push' (JSON to Qdrant), or 'delete' (Remove from Qdrant)")
+    # NEW: Added 'link' to the available actions
+    parser.add_argument("--action", type=str, required=True, choices=["extract", "link", "push", "delete"],
+                        help="'extract' (PDF to JSON), 'link' (Resolve Citations), 'push' (JSON to Qdrant), or 'delete' (Remove from Qdrant)")
     parser.add_argument("--method", type=str, choices=["gemini", "langchain", "unstructured"],
-                        help="Chunking engine. Required for extract/push.")
+                        help="Chunking engine. Required for extract/push/link.")
     parser.add_argument("--strategy", type=str, default="mega", choices=["mega", "parent_child", "naive", "semantic", "layout"],
                         help="Specific strategy for the chosen engine.")
     parser.add_argument("--folder", type=str, default="kapadokya", choices=["kapadokya", "external"],
@@ -107,6 +109,40 @@ def main():
             chunks = chunker.chunk_document(pdf_path)
             if chunks:
                 save_chunks(chunks, processed_dir, filename)
+
+    # ==========================================
+    # ACTION: LINK (RAW_REFERENCES -> REFERENCES)
+    # ==========================================
+    elif args.action == "link":
+        logger.info(f"Starting Citation Linker for {processed_dir}...")
+        linker = CitationLinker()
+        
+        jsons_to_process = []
+        if args.file:
+            # Link a specific json file
+            target_file = args.file
+            if target_file.lower().endswith(".pdf"):
+                target_file = f"{Path(target_file).stem}_chunks.json"
+            elif not target_file.lower().endswith(".json"):
+                target_file = f"{target_file}_chunks.json"
+            
+            target_path = os.path.join(processed_dir, target_file)
+            if os.path.exists(target_path):
+                jsons_to_process.append(target_path)
+            else:
+                logger.error(f"File not found: {target_path}")
+                exit(1)
+        else:
+            # Link all jsons in the directory
+            if not os.path.exists(processed_dir):
+                logger.error(f"Processed directory not found: {processed_dir}")
+                exit(1)
+            jsons_to_process = [os.path.join(processed_dir, f) for f in os.listdir(processed_dir) if f.lower().endswith(".json")]
+
+        for json_path in jsons_to_process:
+            linker.resolve_citations(json_path)
+            
+        logger.info("Citation linking phase completed.")
 
     # ==========================================
     # ACTION: PUSH (JSON -> QDRANT)

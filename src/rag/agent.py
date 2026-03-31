@@ -26,15 +26,16 @@ class KapadokyaAgent:
         self.router_model_name = router_config["model_name"]
         self.agent_model_name = agent_config["model_name"]
 
-        # Tool wrappers
+        # --- Tool wrappers for the Agent ---
         def document_search_wrapper(query: str, source_filename: str) -> str:
             return search_within_document(self.collection_name, query, source_filename)
             
         def hierarchy_fetch_wrapper(parent_summary: str, source_filename: str) -> str:
             return fetch_hierarchical_context(self.collection_name, parent_summary, source_filename)
             
-        def reference_fetch_wrapper(reference_name: str) -> str:
-            return fetch_reference_context(self.collection_name, reference_name)
+        # FIXED: Now strictly takes target_filename and the semantic query to search inside it
+        def reference_fetch_wrapper(target_filename: str, query: str) -> str:
+            return fetch_reference_context(self.collection_name, target_filename, query)
 
         # Dynamic tool allocation based on strategy
         assigned_tools = [document_search_wrapper, reference_fetch_wrapper]
@@ -95,7 +96,7 @@ class KapadokyaAgent:
     @observe(as_type="generation", name="agent_execution")
     def ask(self, user_query: str, gradio_history: list = None, session_id: str = None) -> str:
         
-        # 1. FIX: EXPLICITLY SET TRACE INPUT, SESSION ID, AND TAGS FOR LANGFUSE UI
+        # 1. EXPLICITLY SET TRACE INPUT, SESSION ID, AND TAGS FOR LANGFUSE UI
         langfuse_context.update_current_trace(
             session_id=session_id,
             input=user_query,
@@ -107,7 +108,7 @@ class KapadokyaAgent:
         if gradio_history is None:
             gradio_history = []
             
-        # 2. FIX: LIMIT CHAT HISTORY TO LAST 15 MESSAGES (Protect context window & API costs)
+        # 2. LIMIT CHAT HISTORY TO LAST 15 MESSAGES (Protect context window & API costs)
         gradio_history = gradio_history[-15:]
             
         formatted_history = self._format_history_for_gemini(gradio_history)
@@ -117,7 +118,6 @@ class KapadokyaAgent:
         # Fail-fast strictly checking "intent"
         if route_decision["intent"] == "chat":
             logger.info("Router: Handled as casual chat.")
-            # EXPLICITLY SET TRACE & OBSERVATION OUTPUT FOR CHAT INTENT
             langfuse_context.update_current_trace(output=route_decision["response"])
             langfuse_context.update_current_observation(output=route_decision["response"])
             return route_decision["response"]
@@ -146,7 +146,6 @@ class KapadokyaAgent:
                 model=self.agent_model_name
             )
             
-        # EXPLICITLY SET TRACE & OBSERVATION OUTPUT FOR RAG INTENT
         langfuse_context.update_current_trace(output=response.text)
         langfuse_context.update_current_observation(output=response.text)
         return response.text

@@ -11,3 +11,5 @@ pdf2image==1.17.0
 
 # --- Moved from main requirements (Only needed for Semantic Chunker baseline) ---
 langchain-google-genai==4.2.1
+
+pandas==2.2.1

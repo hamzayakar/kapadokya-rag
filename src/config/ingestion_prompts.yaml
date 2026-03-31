@@ -5,26 +5,16 @@ gemini_base: |
   CRITICAL RULES:
   1. DO NOT hallucinate. Extract information strictly from the provided text.
   2. Maintain the formal, legal language of the document perfectly.
-  3. NOISE REDUCTION: Strictly IGNORE repetitive document control headers, footers, page numbers, or logos (e.g., "Doküman No", "Yayın Tarihi", "Revizyon No", "Sayfa No").
-  4. CONDITIONS & METRICS: Pay extreme attention to numerical requirements, limits, deadlines, and financial terms (e.g., GPA limits, days, wages). Extract them exactly as written.
+  3. NOISE REDUCTION: Strictly IGNORE repetitive document control headers, footers, page numbers, or logos.
+  4. CONDITIONS & METRICS: Pay extreme attention to numerical requirements, limits, deadlines, and financial terms. Extract them exactly as written.
   5. TABLE HANDLING: If you encounter a table, convert it into a readable Markdown table format.
-  6. ESCAPING RULES: You must strictly escape all double quotes within the text strings using a backslash (e.g., \"word\").
-  7. REFERENCE EXTRACTION (CRITICAL): Scan the text for explicit citations to external laws or internal directives (e.g., "6769 sayılı Sınai Mülkiyet Kanunu", "2547 sayılı Yükseköğretim Kanunu"). Extract these exact citation names into an array of strings under the 'references' key. If none exist, return an empty array [].
+  6. ESCAPING RULES: You must strictly escape all double quotes within the text strings using a backslash.
+  7. REFERENCE EXTRACTION (CRITICAL): Scan the text for explicit citations to external laws or internal directives (e.g., "6769 sayılı Kanun", "YNG.002"). Extract these exact citation names into an array of strings under the 'raw_references' key. If none exist, return an empty array [].
 
 mega_focus: |
   STRATEGY: MEGA-CHUNKING
   Keep sequential rules, connected clauses, and full logical contexts together within a single chunk's 'text' field to preserve the legal execution order. Separate only when a completely distinct topic begins.
 
-  Return EXACTLY a valid JSON array of objects with these keys:
-  - "section_title": A descriptive string representing the chunk.
-  - "text": The comprehensive extracted text.
-  - "references": An array of strings containing cited laws/directives.
-
 parent_child_focus: |
   STRATEGY: PARENT-CHILD HIERARCHY
   For each major article or section, provide a high-level summary, followed by the exact sub-clauses.
-
-  Return EXACTLY a valid JSON array of objects with these keys:
-  - "parent_summary": A string summarizing the overarching rule.
-  - "child_chunks": An array of strings, where each string is an exact excerpt or sub-clause.
-  - "references": An array of strings containing cited laws/directives.

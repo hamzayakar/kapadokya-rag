@@ -2,12 +2,24 @@ import json
 import yaml
 import google.generativeai as genai
 from typing import List, Dict, Any
+from typing_extensions import TypedDict
 from langfuse.decorators import observe, langfuse_context
 
 from src.ingestion.chunkers.base_chunker import BaseChunker
 from src.config.settings import settings
 
 genai.configure(api_key=settings.gemini_api_key)
+
+# --- Define Enforced JSON Schemas ---
+class MegaChunkSchema(TypedDict):
+    section_title: str
+    text: str
+    raw_references: list[str]
+
+class ParentChildChunkSchema(TypedDict):
+    parent_summary: str
+    child_chunks: list[str]
+    raw_references: list[str]
 
 class GeminiChunker(BaseChunker):
     def __init__(self, strategy: str = "mega"):
@@ -28,11 +40,16 @@ class GeminiChunker(BaseChunker):
         langfuse_context.update_current_observation(name=f"gemini_{self.strategy}_chunking")
         uploaded_file = genai.upload_file(path=file_path, mime_type="application/pdf")
         
+        # Select the target schema based on the strategy to guarantee determinism
+        target_schema = list[MegaChunkSchema] if self.strategy == "mega" else list[ParentChildChunkSchema]
+        
         try:
             response = self.model.generate_content(
                 [uploaded_file, self.system_prompt],
                 generation_config=genai.GenerationConfig(
                     response_mime_type="application/json",
+                    response_schema=target_schema,
+                    temperature=0.1 # Low temperature for factual extraction
                 )
             )
             
@@ -53,7 +70,8 @@ class GeminiChunker(BaseChunker):
                 meta = base_meta.copy()
                 meta["strategy"] = f"gemini_{self.strategy}"
                 meta["chunk_index"] = i
-                meta["references"] = chunk.get("references", [])
+                # Save as raw_references for the intermediate Linker phase
+                meta["raw_references"] = chunk.get("raw_references", [])
                 
                 if self.strategy == "mega":
                     meta["section_title"] = chunk.get("section_title", "")
